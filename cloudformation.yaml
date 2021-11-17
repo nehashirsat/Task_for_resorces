@@ -40,5 +40,5 @@ Properties:
         }
   FunctionName: "create-todo"
 
-  Role: String
+  Role: "arn:aws:iam::331077074786:role/service-role/create-todo-role-pugvemco"
   Runtime: "python3.7"
