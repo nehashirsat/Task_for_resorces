@@ -37,7 +37,7 @@ I have create API gateway and two methods in API gateway POST and GET and used r
 # Self Evaluation
 
 ## What I could be done better if given more time?
-- May be I will use better infrastructure like VPN subnet and apply more security to my application
+- May be I will use better infrastructure like VPC subnet and apply more security to my application
 - In IAM role I will give more granular access
 - Will follow best practices while writting cloudformation template
 - instead of storing my code in machine I'll prefer S3 for that
