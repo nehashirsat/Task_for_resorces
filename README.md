@@ -8,7 +8,7 @@ As per my assignment I have created 3 services in AWS namely API Gateway, Lambda
 
 I have written code in Python language
 
-# Why Python ?
+### Why Python ?
 - Because Python is very user friendly, and it’s really fast to test and to create a function
 
 ## Creating the DynamoDB Table
