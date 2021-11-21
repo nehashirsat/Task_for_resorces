@@ -70,7 +70,8 @@ Resources:
   ResourcesTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: resources
+      TableName:
+        Ref: DynamoDBTableName
       AttributeDefinitions:
         - AttributeName: "resourceID"
           AttributeType: "N"
@@ -198,13 +199,13 @@ Resources:
 Parameters:
   CreateTodoLambdaFuncName:
     Type: String
-    Default: Create-todo
+    Default: create-todo
   ReadTodoLambdaFuncName:
     Type: String
     Default: Read-todo
   DynamoDBTableName:
     Type: String
-    Default: Dynamo_api-lambda-db
+    Default: resources
   APIName:
     Type: String
     Default: API_api-lambda-db
