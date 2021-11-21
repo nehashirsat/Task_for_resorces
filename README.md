@@ -24,9 +24,31 @@ I have Created Two Lambda functions
 - Create-Todo - A lambda that accepts JSON data for todo ({ title: string, task: string }) via direct invocation and store it in DynamoDB with a unique ID
 - Read-Todo - Another lambda which accepts all or id for the todos - direct invocation
 
-I have used Runtime as Python 3.7 and used boto3 dependency for doing the database persistance
-I have create IAM role and Policy which has dynamoDB read, Write Access
+I have used Runtime as Python 3.7 and used boto3 dependency for doing the database persistance, also
+I have created IAM role and Policy which has dynamoDB read, Write Access
 
 ## API Gateway Endpoint
 I have create API gateway and two methods in API gateway POST and GET and used root resource only
+
+## Cloudformation
+- I have Used Cloudformation template in yaml to create and deploy my application and resorces in AWS cloud
+
+
+# Self Evaluation
+
+## What I could be done better if given more time?
+- May be I will use better infrastructure like VPN subnet and apply more security to my application
+- In IAM role I will give more granular access
+- Will follow best practices while writting cloudformation template
+- instead of storing my code in machine I'll prefer S3 for that
+- In API Gateway I will add more security like API key
+
+## Rate yourself on the technologies used in the assignment out of 10!
+- Lambda Function - 4/10 
+- DynamoDB - 4/10
+- API Gateway - 4/10
+- Cloudformation - 5/10
+- IAM - 4/10
+
+
 
