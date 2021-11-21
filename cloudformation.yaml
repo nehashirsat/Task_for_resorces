@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Resources:
-  Create_todo_LambdaFunction:
+  CreateTodoLambdaFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
@@ -39,13 +39,14 @@ Resources:
                           'statusCode': 400,
                           'body': json.dumps('Error saving the task')
                   }
-      FunctionName: create-todo
+      FunctionName:
+        Ref: CreateTodoLambdaFuncName
       Handler: index.lambda_handler
       Runtime: python3.7
       Role: !GetAtt IAMRole.Arn
     DependsOn:
       - ResourcesTable
-  Read_todo_LambdaFunction:
+  ReadTodoLambdaFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
@@ -61,7 +62,8 @@ Resources:
               'statusCode': 200,
               'body': response['Items']
             }
-      FunctionName: read-todo
+      FunctionName:
+        Ref: ReadTodoLambdaFuncName
       Handler: index.lambda_handler
       Runtime: python3.7
       Role: !GetAtt IAMRole.Arn
@@ -84,7 +86,78 @@ Resources:
         WriteCapacityUnits: '5'
     DependsOn:
       - IAMRole
-
+  APIGatewayRestAPI:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name:
+        Ref: APIName
+    DependsOn:
+      - CreateTodoLambdaFunction
+      #- ReadTodoLambdaFunction
+  APIGatewayPostMethod:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref APIGatewayRestAPI
+      ResourceId: !GetAtt 
+        - APIGatewayRestAPI
+        - RootResourceId
+      HttpMethod: POST
+      AuthorizationType: NONE
+      MethodResponses:
+        - StatusCode: 200
+      Integration:
+        Type: AWS
+        IntegrationResponses:
+          - StatusCode: 200
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - >-
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateTodoLambdaFuncNameArn}/invocations
+          - CreateTodoLambdaFuncNameArn: !GetAtt CreateTodoLambdaFunction.Arn
+  APIGatewayGETMethod:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref APIGatewayRestAPI
+      ResourceId: !GetAtt 
+        - APIGatewayRestAPI
+        - RootResourceId
+      HttpMethod: GET
+      AuthorizationType: NONE
+      MethodResponses:
+        - StatusCode: 200
+      Integration:
+        Type: AWS
+        IntegrationResponses:
+          - StatusCode: 200
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - >-
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReadTodoLambdaFuncNameArn}/invocations
+          - ReadTodoLambdaFuncNameArn: !GetAtt ReadTodoLambdaFunction.Arn
+  APIGatewayDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    Properties:
+      RestApiId: !Ref APIGatewayRestAPI
+      StageName:
+        Ref: EnvironmentName
+    DependsOn:
+      - APIGatewayPostMethod
+  APIGatewayPostPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !GetAtt CreateTodoLambdaFunction.Arn
+      Principal: apigateway.amazonaws.com
+    DependsOn:
+      - APIGatewayDeployment
+  APIGatewayGetPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !GetAtt ReadTodoLambdaFunction.Arn
+      Principal: apigateway.amazonaws.com
+    DependsOn:
+      - APIGatewayDeployment
   IAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -123,6 +196,18 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: '*'
 Parameters:
+  CreateTodoLambdaFuncName:
+    Type: String
+    Default: Create-todo
+  ReadTodoLambdaFuncName:
+    Type: String
+    Default: Read-todo
   DynamoDBTableName:
     Type: String
-    Default: resources
+    Default: Dynamo_api-lambda-db
+  APIName:
+    Type: String
+    Default: API_api-lambda-db
+  EnvironmentName:
+    Type: String
+    Default: Prod
