@@ -1,44 +1,128 @@
-Type: AWS::Lambda::Function
-Properties: 
-  Architectures: 
-    - "x86_64"
-  Code:
-  ZipFile: |
-        import json
-        import boto3
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  Create_todo_LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import boto3
 
-        def lambda_handler(event, context):
-                # Instanciating connection objects with DynamoDB using boto3 dependency
-                dynamodb = boto3.resource('dynamodb')
+          def lambda_handler(event, context):
+              # Instanciating connection objects with DynamoDB using boto3 dependency
+              dynamodb = boto3.resource('dynamodb')
+              
+              # Getting the table Resources object
+              tableResources = dynamodb.Table('resources')
+              
+              resourceID = event['resourceID']
+              title = event['title']
+              task = event['task']
+            
+              # Putting a try/catch to log to user when some error occurs
+              try:
+                  tableResources.put_item(
+                    Item={
+                          'resourceID': int(resourceID),
+                          'title': title,
+                          'task': task
+                      }
+                  )
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps('Succesfully inserted task!')
+                  }
+              except:
+                  print('Closing lambda function')
+                  return {
+                          'statusCode': 400,
+                          'body': json.dumps('Error saving the task')
+                  }
+      FunctionName: create-todo
+      Handler: index.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt IAMRole.Arn
+    DependsOn:
+      - ResourcesTable
+  Read_todo_LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          def lambda_handler(event, context):
+            # TODO implement
+            dynamodb = boto3.resource('dynamodb')
+            tableResources = dynamodb.Table('resources')
+            response = tableResources.scan()
+            return {
+              'statusCode': 200,
+              'body': response['Items']
+            }
+      FunctionName: read-todo
+      Handler: index.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt IAMRole.Arn
+  ResourcesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: resources
+      AttributeDefinitions:
+        - AttributeName: "resourceID"
+          AttributeType: "N"
+        - AttributeName: "title"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "resourceID"
+          KeyType: "HASH"
+        - AttributeName: "title"
+          KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: '5'
+        WriteCapacityUnits: '5'
+    DependsOn:
+      - IAMRole
 
-                # Getting the table Resources object
-                tableResources = dynamodb.Table('resources')
-
-                resourceID = event['resourceID']
-                title = event['title']
-                task = event['task']
- 
-                # Putting a try/catch to log to user when some error occurs
-                try:
-                        tableTemperature.put_item(
-                           Item={
-                                  'resourceID': int(resourceID),
-                                  'title': title,
-                                  'task': task
-                           }
-                        )
-
-                        return {
-                                'statusCode': 200,
-                                'body': json.dumps('Succesfully inserted task!')
-                        }
-                except:
-                        print('Closing lambda function')
-                        return {
-                                'statusCode': 400,
-                                'body': json.dumps('Error saving the task')
-        }
-  FunctionName: "create-todo"
-
-  Role: "arn:aws:iam::331077074786:role/service-role/create-todo-role-pugvemco"
-  Runtime: "python3.7"
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: Policy_api-lambda-db
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:BatchGetItem'
+                  - 'dynamodb:BatchWriteItem'
+                  - 'dynamodb:TagResource'
+                  - 'dynamodb:UntagResource'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:Scan'
+                  - 'dynamodb:Query'
+                  - 'dynamodb:UpdateItem'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+Parameters:
+  DynamoDBTableName:
+    Type: String
+    Default: resources
